@@ -101,10 +101,10 @@ export class FileProcessor
 		if (this._files.length > 0)
 		{
 			this._newPDF = await PDFDocument.create();
+			this.setPDFHeaders(this._newPDF);
 
 			for (const file of this._files)
 			{
-				this.setPDFHeaders(this._newPDF);
 				const originalPDFBytes = await FileUtils.readAsArrayBuffer(file);
 				const originalPDFDoc = await PDFDocument.load(originalPDFBytes);
 		
