@@ -12,7 +12,6 @@ export class FileProcessor
 
 	constructor()
 	{
-		this._inputElement
 		this._inputElement.type = "file";
 		this._inputElement.accept = "application/pdf";
 		this._inputElement.multiple = true;
