@@ -1,14 +1,28 @@
 import {PDFDocument} from "pdf-lib";
-import {FileUtils} from "./FileUtils";
+import {FileUtils} from "utils/FileUtils";
+import {HTMLUtils} from "utils/HTMLUtils";
+import {ImageUtils} from "utils/ImageUtils";
+import {PDFRenderer} from "utils/PDFRenderer";
+import {PDFSplitter} from "utils/PDFSplitter";
+
+export interface IOnePagePDFDoc
+{
+	doc: PDFDocument;
+	thumbnail: string;
+	rotation: number; // 0 | 90 | 180 | 270
+	originalFileName: string;
+	originalPageNumber: number; // its pagenumber in the original pdf document
+}
 
 export class FileProcessor
 {
 	private _uploadDiv: HTMLElement = document.getElementById("uploadDiv");
 	private _inputElement: HTMLInputElement = document.createElement("input");
+	private _thumbnails: HTMLElement = document.getElementById("thumbnails");
 	private _info: HTMLElement = document.getElementById("info");
 	private _downloadBtn: HTMLElement = document.getElementById("downloadBtn");
-	private _files: File[] = []; // PDF files
-	private _newPDF: PDFDocument;
+	private _originalFiles: File[] = []; // PDF files
+	private _newOnePagePDFObjects: IOnePagePDFDoc[] = []; // one paged pdfs
 
 	constructor()
 	{
@@ -19,6 +33,18 @@ export class FileProcessor
 		this.addEventListeners();
 	}
 
+	private disableDownloadButton()
+	{
+		this._downloadBtn.textContent = "Loading...";
+		this._downloadBtn.classList.add("disabled");
+	}
+
+	private enableDownloadButton()
+	{
+		this._downloadBtn.textContent = "Download merged PDF";
+		this._downloadBtn.classList.remove("disabled");
+	}
+
 	private addEventListeners()
 	{
 		this._inputElement.addEventListener("change", (event: Event) =>
@@ -27,7 +53,7 @@ export class FileProcessor
 			this.processFiles(files);
 		});
 
-		this._downloadBtn.addEventListener("click", this.onDownloadClick);
+		this._downloadBtn.onclick = this.onDownloadClick;
 
 		this._uploadDiv.addEventListener("click", () =>
 		{
@@ -62,7 +88,9 @@ export class FileProcessor
 
 	private async processFiles(files: FileList)
 	{
-		const fileNames = this._files.map((file: File) => file.name);
+		const fileNames = this._originalFiles.map((file: File) => file.name);
+
+		let newFilesAdded = false;
 
 		for (let i = 0; i < files.length; ++i)
 		{
@@ -70,17 +98,82 @@ export class FileProcessor
 
 			if (!fileNames.includes(file.name))
 			{
-				this._files.push(file);
+				this._originalFiles.push(file);
+				newFilesAdded = true;
 			}
 		}
 
-		if (this._files.length > 0)
+		if (this._originalFiles.length > 0 && newFilesAdded)
 		{
-			this._downloadBtn.classList.add("hidden");
-			await this.createPDF();
-			const info = this.getInfo();
-			this._info.textContent = `${info.fileCount} PDFs selected with a total pagenumber of ${info.pageCount}`;
+			this._uploadDiv.classList.add("small");
 			this._downloadBtn.classList.remove("hidden");
+			this.disableDownloadButton();
+			await this.createListOfPDFs();
+			
+			this.enableDownloadButton();
+		}
+	}
+
+	private async createListOfPDFs()
+	{
+		this._newOnePagePDFObjects.length = 0;
+		for (const file of this._originalFiles)
+		{
+			const newPDFs = await PDFSplitter.split(file);
+
+			for (let j = 0; j < newPDFs.length; ++j)
+			{
+				const newPDF = newPDFs[j];
+
+				const firstPage = newPDF.getPages()[0];
+				let originalRotation = firstPage.getRotation().angle % 360;
+				if (originalRotation < 0)
+				{
+					originalRotation += 360;
+				}
+
+				this._newOnePagePDFObjects.push({
+					doc: newPDF,
+					rotation: originalRotation,
+					originalFileName: file.name,
+					originalPageNumber: j,
+					thumbnail: null
+				});
+			}
+		}
+
+		await this.refreshThumbnails();
+	}
+
+	private async refreshThumbnails()
+	{
+		HTMLUtils.clearElement(this._thumbnails);
+
+		for (let i = 0; i < this._newOnePagePDFObjects.length; ++i)
+		{
+			const pdfObject = this._newOnePagePDFObjects[i];
+			const thumbnailContainer = document.createElement("div");
+			thumbnailContainer.classList.add("hbox");
+			thumbnailContainer.classList.add("thumbnailContainer");
+
+			const labelContent = `${pdfObject.originalFileName}: page ${pdfObject.originalPageNumber + 1}`;
+
+			const thumbnail = await ImageUtils.loadImage(await PDFRenderer.getThumbnailAndViewBox(400, pdfObject.doc, labelContent));
+			thumbnail.classList.add("thumbnail");
+
+			const label = document.createElement("div");
+			label.classList.add("label");
+
+			label.textContent = labelContent;
+
+			thumbnailContainer.appendChild(thumbnail);
+			thumbnailContainer.appendChild(label);
+
+			this._thumbnails.appendChild(thumbnailContainer);
+
+			this._thumbnails.scrollTop = this._thumbnails.scrollHeight;
+
+			this._info.textContent = `Merged PDF will be generated with ${i + 1} pages`;
 		}
 	}
 
@@ -88,44 +181,43 @@ export class FileProcessor
 	{
 		pdfDoc.setTitle("Merged PDF");
 		pdfDoc.setAuthor("https://github.com/soadzoor/PDF-merger");
-		pdfDoc.setKeywords(["eggs", "wall", "fall", "king", "horses", "men"]);
+		//pdfDoc.setKeywords(["eggs", "wall", "fall", "king", "horses", "men"]);
 		pdfDoc.setProducer("https://github.com/soadzoor/PDF-merger");
 		pdfDoc.setCreator("PDF merger (https://github.com/soadzoor/PDF-merger)");
 		pdfDoc.setCreationDate(new Date());
 		pdfDoc.setModificationDate(new Date());
 	}
 
-	private async createPDF()
+	private async createMergedPDF()
 	{
-		if (this._files.length > 0)
+		if (this._newOnePagePDFObjects.length > 0)
 		{
-			this._newPDF = await PDFDocument.create();
-			this.setPDFHeaders(this._newPDF);
+			const mergedPDF = await PDFDocument.create();
+			this.setPDFHeaders(mergedPDF);
 
-			for (const file of this._files)
+			for (const onePagedPDFObject of this._newOnePagePDFObjects)
 			{
-				const originalPDFBytes = await FileUtils.readAsArrayBuffer(file);
-				const originalPDFDoc = await PDFDocument.load(originalPDFBytes);
+				const onePagedDoc = onePagedPDFObject.doc;
 
-				const pageCount = originalPDFDoc.getPageCount();
-
-				const pages = await this._newPDF.copyPages(originalPDFDoc, this.getIndicesFromZeroToN(pageCount - 1));
+				// All these pdf documents contain only one page, but it doesn't hurt to leave it like this for extra safety
+				const pageCount = onePagedDoc.getPageCount();
+				const pages = await mergedPDF.copyPages(onePagedDoc, this.getIndicesFromZeroToN(pageCount - 1));
 
 				for (const page of pages)
 				{
-					this._newPDF.addPage(page);
+					mergedPDF.addPage(page);
 				}
 			}
 
-			return this._newPDF;
+			return mergedPDF;
 		}
 	}
 
 	private getInfo()
 	{
 		return {
-			fileCount: this._files.length,
-			pageCount: this._newPDF.getPageCount()
+			fileCount: this._originalFiles.length,
+			pageCount: this._newOnePagePDFObjects.length
 		};
 	}
 
@@ -143,10 +235,8 @@ export class FileProcessor
 
 	private onDownloadClick = async () =>
 	{
-		if (this._files.length > 0)
-		{
-			const byteArray = await this._newPDF.save();
-			FileUtils.downloadFileGivenByData(byteArray, "mergedPDF.pdf", "application/pdf");
-		}
+		const mergedPDF = await this.createMergedPDF();
+		const byteArray = await mergedPDF.save();
+		FileUtils.downloadFileGivenByData(byteArray, "mergedPDF.pdf", "application/pdf");
 	};
 }

@@ -24,7 +24,7 @@ export class FileUtils
 		FileUtils.downloadFileFromUrl(url, defaultFileName);
 	}
 
-	private static createURLFromData(content: string | Uint8Array, type: string = "text/plain")
+	public static createURLFromData(content: string | Uint8Array, type: string = "text/plain")
 	{
 		// This is slow for big text -> we use Blob instead.
 		//var url = "data:text/plain;charset=utf-8," + encodeURIComponent(content);
@@ -48,5 +48,16 @@ export class FileUtils
 		document.body.appendChild(a);
 		a.click();
 		document.body.removeChild(a);
+	}
+
+	public static async canvasToBlob(canvas: HTMLCanvasElement)
+	{
+		return new Promise<Blob>((resolve, reject) =>
+		{
+			canvas.toBlob((blob: Blob) =>
+			{
+				resolve(blob);
+			});
+		});
 	}
 }

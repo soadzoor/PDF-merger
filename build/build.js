@@ -49,6 +49,9 @@ async function buildApp()
 	shx(`mkdir ${buildFolder}/`);
 	shx(`cp src/index.html ${buildFolder}/index.html`);
 
+	shx(`mkdir -p ${buildFolder}/libs/pdfjs`);
+	shx(`cp ${NODE_MODULES_PATH}/pdfjs-dist/build/pdf.worker.min.js ${buildFolder}/libs/pdfjs/pdf.worker.min.js`);
+
 	assets(buildFolder);
 
 	const promises = [
