@@ -10,6 +10,9 @@
 	font-weight: normal;
 	color: #cccccc;
 	box-sizing: border-box;
+	background-repeat: no-repeat;
+	background-size: contain;
+	background-position: center center;
 }
 
 html {
@@ -26,20 +29,20 @@ body {
 
 /* width */
 ::-webkit-scrollbar {
-  width: 12px;
-  height: 8px;
+	width: 12px;
+	height: 8px;
 }
 
 /* Track */
 ::-webkit-scrollbar-track {
-  background: rgba(200, 200, 200, 0.1);
+	background: rgba(200, 200, 200, 0.1);
 }
 
 /* Handle */
 ::-webkit-scrollbar-thumb {
-  background: #C4C4C4;
-  border: solid 2px white;
-  border-radius: 5px;
+	background: #C4C4C4;
+	border: solid 2px white;
+	border-radius: 5px;
 }
 
 #playGround {
@@ -73,7 +76,7 @@ body {
 
 #uploadDiv.small {
 	font-size: 1.2rem;
-	height: 45px;
+	min-height: 45px;
 }
 #uploadDiv.small .cloud {
 	display: none;
@@ -91,9 +94,6 @@ body {
 	width: 60px;
 	height: 41px;
 	background-image: url(../assets/images/cloud.svg);
-	background-repeat: no-repeat;
-	background-size: contain;
-	background-position: center center;
 	margin-top: 50px;
 }
 
@@ -109,12 +109,17 @@ body {
 	cursor: pointer;
 	padding: 10px;
 	border-radius: 5px;
-	border: 1px solid #4889f0;
+	border: 1px solid #cccccc;
 	box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25);
 }
 
 .btn:hover {
+	border-color: #4889f0;
 	color: #4889f0;
+}
+
+#downloadBtn {
+	border-color: #4889f0;
 }
 
 .hbox {
@@ -153,6 +158,33 @@ body {
 .thumbnail {
 	border: 1px solid rgba(0, 0, 0, 0.25);
 	box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25);
-	max-width: 50%;
+	max-width: 35%;
 	margin-left: 10px;
+}
+
+.buttons {
+	margin-left: 10px;
+}
+
+.remove {
+	background-image: url(../assets/images/trash.svg);
+	width: 30px;
+	height: 30px;
+	margin: 10px;
+}
+
+.arrow {
+	background-image: url(../assets/images/arrowDown.svg);
+}
+
+.arrow.up {
+	transform: rotate(180deg);
+}
+
+.rotation {
+	background-image: url(../assets/images/rotation.svg);
+}
+
+.rotation.ccw {
+	transform: scale(-1, 1);
 }

@@ -1,8 +1,11 @@
-import {PDFDocument} from "pdf-lib";
+import {degrees, PDFDocument} from "pdf-lib";
 import {FileSelector} from "utils/FileSelector";
 import {FileUtils} from "utils/FileUtils";
+import {Functions} from "utils/Functions";
+import {HTMLFactory} from "utils/HTMLFactory";
 import {HTMLUtils} from "utils/HTMLUtils";
 import {ImageUtils} from "utils/ImageUtils";
+import {MathUtils} from "utils/MathUtils";
 import {PDFRenderer} from "utils/PDFRenderer";
 import {PDFSplitter} from "utils/PDFSplitter";
 
@@ -10,7 +13,7 @@ export interface IOnePagePDFDoc
 {
 	doc: PDFDocument;
 	thumbnail: string;
-	rotation: number; // 0 | 90 | 180 | 270
+	originalRotation: number; // 0 | 90 | 180 | 270
 	originalFileName: string;
 	originalPageNumber: number; // its pagenumber in the original pdf document
 }
@@ -23,6 +26,8 @@ export class PDFEditor
 	private _downloadBtn: HTMLElement = document.getElementById("downloadBtn");
 	private _originalFiles: File[] = []; // PDF files
 	private _newOnePagePDFObjects: IOnePagePDFDoc[] = []; // one paged pdfs
+	private _savedScrollValue: number = 0;
+	private readonly _thumbnailSize: number = 400;
 
 	constructor()
 	{
@@ -71,7 +76,7 @@ export class PDFEditor
 			this._downloadBtn.classList.remove("hidden");
 			this.disableDownloadButton();
 			await this.createListOfPDFs();
-			
+
 			this.enableDownloadButton();
 		}
 	};
@@ -87,16 +92,12 @@ export class PDFEditor
 			{
 				const newPDF = newPDFs[j];
 
-				const firstPage = newPDF.getPages()[0];
-				let originalRotation = firstPage.getRotation().angle % 360;
-				if (originalRotation < 0)
-				{
-					originalRotation += 360;
-				}
+				const firstPage = newPDF.getPage(0);
+				let originalRotation = MathUtils.clampDegreesBetweenFullCircle(firstPage.getRotation().angle);
 
 				this._newOnePagePDFObjects.push({
 					doc: newPDF,
-					rotation: originalRotation,
+					originalRotation: originalRotation,
 					originalFileName: file.name,
 					originalPageNumber: j,
 					thumbnail: null
@@ -107,7 +108,7 @@ export class PDFEditor
 		await this.refreshThumbnails();
 	}
 
-	private async refreshThumbnails()
+	private async refreshThumbnails(scrollType: "toBottom" | "toLastPosition" = "toBottom")
 	{
 		HTMLUtils.clearElement(this._thumbnails);
 
@@ -120,7 +121,17 @@ export class PDFEditor
 
 			const labelContent = `${pdfObject.originalFileName}: page ${pdfObject.originalPageNumber + 1}`;
 
-			const thumbnail = await ImageUtils.loadImage(await PDFRenderer.getThumbnailAndViewBox(400, pdfObject.doc, labelContent));
+			const firstPage = pdfObject.doc.getPage(0);
+			let currentRotationValue = firstPage.getRotation().angle;
+
+			const thumbnailSrcPromise = PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, labelContent, currentRotationValue);
+			const thumbnail = scrollType === "toBottom" ? await ImageUtils.loadImage(await thumbnailSrcPromise) : document.createElement("img");
+	
+			if (!thumbnail.src)
+			{
+				thumbnail.src = await thumbnailSrcPromise;
+			}
+			
 			thumbnail.classList.add("thumbnail");
 
 			const label = document.createElement("div");
@@ -128,15 +139,63 @@ export class PDFEditor
 
 			label.textContent = labelContent;
 
+
+			const onArrowUpClick = i > 0 ? () =>
+			{
+				[this._newOnePagePDFObjects[i], this._newOnePagePDFObjects[i - 1]] = [this._newOnePagePDFObjects[i - 1], this._newOnePagePDFObjects[i]];
+				this.thumbnailsReorderedCallback();
+			} : Functions.empty;
+
+			const onRotateCCWClick = async () =>
+			{
+				currentRotationValue = MathUtils.clampDegreesBetweenFullCircle(currentRotationValue - 90);
+				firstPage.setRotation(degrees(currentRotationValue));
+				thumbnail.src = await PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, labelContent, currentRotationValue);
+			};
+
+			const onRemoveClick = () =>
+			{
+				this._newOnePagePDFObjects.splice(i, 1);
+				this.thumbnailsReorderedCallback();
+			};
+
+			const onRotateCWClick = async () =>
+			{
+				currentRotationValue = MathUtils.clampDegreesBetweenFullCircle(currentRotationValue + 90);
+				firstPage.setRotation(degrees(currentRotationValue));
+				thumbnail.src = await PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, labelContent, currentRotationValue);
+			};
+
+			const onArrowDownClick = i < this._newOnePagePDFObjects.length - 1 ? () =>
+			{
+				[this._newOnePagePDFObjects[i + 1], this._newOnePagePDFObjects[i]] = [this._newOnePagePDFObjects[i], this._newOnePagePDFObjects[i + 1]];
+				this.thumbnailsReorderedCallback();
+			} : Functions.empty;
+
+			const buttons = HTMLFactory.createButtonsForPDF({
+				onArrowUpClick,
+				onRotateCCWClick,
+				onRemoveClick,
+				onRotateCWClick,
+				onArrowDownClick
+			});
+
+			thumbnailContainer.appendChild(buttons);
 			thumbnailContainer.appendChild(thumbnail);
 			thumbnailContainer.appendChild(label);
 
 			this._thumbnails.appendChild(thumbnailContainer);
 
-			this._thumbnails.scrollTop = this._thumbnails.scrollHeight;
+			this._thumbnails.scrollTop = scrollType === "toBottom" ? this._thumbnails.scrollHeight : this._savedScrollValue;
 
 			this._info.textContent = `Merged PDF will be generated with ${i + 1} pages`;
 		}
+	}
+
+	private thumbnailsReorderedCallback()
+	{
+		this._savedScrollValue = this._thumbnails.scrollTop;
+		this.refreshThumbnails("toLastPosition");
 	}
 
 	private setPDFHeaders(pdfDoc: PDFDocument)

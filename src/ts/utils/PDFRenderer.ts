@@ -47,6 +47,7 @@ export class PDFRenderer
 	}
 
 	private static _background: "transparent" | "white" = "white";
+
 	public static setBackground(value: "transparent" | "white")
 	{
 		PDFRenderer._background = value;
@@ -93,29 +94,6 @@ export class PDFRenderer
 	public static async init(pdf: string | PDFDocument)
 	{
 		await PDFRenderer.savePDFValues(pdf);
-	}
-
-	private static isCanvasCompletelyWhite(ctx: CanvasRenderingContext2D)
-	{
-		const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height).data;
-
-		for (let i = 0; i < imageData.length; i += 4)
-		{
-			const r = imageData[i];
-			const g = imageData[i + 1];
-			const b = imageData[i + 2];
-			const a = imageData[i + 3];
-
-			const isWhite = r === 255 && g === 255 && b === 255;
-			const isTransparent = a === 0;
-
-			if (!isTransparent && !isWhite)
-			{
-				return false;
-			}
-		}
-
-		return true;
 	}
 
 	private static async getSnapShot(config: ISnapShotConfig)
@@ -199,9 +177,8 @@ export class PDFRenderer
 				const context = await PDFRenderer.getSnapShot(snapShotConfig);
 
 				console.log("tile rasterized");
-				const canvasContext = PDFRenderer.isCanvasCompletelyWhite(context) ? null : context;
 
-				const url = canvasContext ? URL.createObjectURL(await FileUtils.canvasToBlob(canvasContext.canvas)) : null;
+				const url = URL.createObjectURL(await FileUtils.canvasToBlob(context.canvas));
 
 				resolve(url);
 
@@ -209,10 +186,7 @@ export class PDFRenderer
 
 				if (PDFRenderer._queueToProcess.length > 0)
 				{
-					requestAnimationFrame(() =>
-					{
-						PDFRenderer.processQueue();
-					});
+					PDFRenderer.processQueue();
 				}
 			}
 		}
@@ -242,10 +216,8 @@ export class PDFRenderer
 
 			if (!PDFRenderer._isProcessing)
 			{
-				requestAnimationFrame(() =>
-				{
-					PDFRenderer.processQueue();
-				});
+
+				PDFRenderer.processQueue();
 			}
 		});
 	}
@@ -256,7 +228,7 @@ export class PDFRenderer
 	 * @param pdf 
 	 * @param cacheKey If you'd like to cache the thumbnail, you should give a unique name. It will be saved at _cache[cacheKey]
 	 */
-	public static async getThumbnailAndViewBox(maxSize: number, pdf: PDFDocument, cacheKey: string, rotation?: number)
+	public static async getThumbnailAndViewBox(maxSize: number, pdf: PDFDocument, cacheKey: string, rotation: number)
 	{
 		if (cacheKey)
 		{
@@ -265,24 +237,17 @@ export class PDFRenderer
 				this._thumbnailCache[cacheKey] = PDFRenderer.getFullImageURLFromPDF(maxSize, pdf);
 			}
 
-			if (rotation != null)
+			if (!this._thumbnailCache[`${cacheKey}_${rotation}`])
 			{
-				if (!this._thumbnailCache[`${cacheKey}_${rotation}`])
+				const imgSrcWithoutRotation = await this._thumbnailCache[cacheKey];
+				const img = await ImageUtils.loadImage(imgSrcWithoutRotation);
+				this._thumbnailCache[`${cacheKey}_${rotation}`] = new Promise<string>((resolve, reject) =>
 				{
-					const imgSrcWithoutRotation = await this._thumbnailCache[cacheKey];
-					const img = await ImageUtils.loadImage(imgSrcWithoutRotation);
-					this._thumbnailCache[`${cacheKey}_${rotation}`] = new Promise<string>((resolve, reject) =>
-					{
-						resolve(ImageUtils.rotateImage(img, rotation));
-					});
-				}
+					resolve(ImageUtils.rotateImage(img, rotation));
+				});
+			}
 
-				return this._thumbnailCache[`${cacheKey}_${rotation}`];
-			}
-			else
-			{
-				return this._thumbnailCache[cacheKey];
-			}
+			return this._thumbnailCache[`${cacheKey}_${rotation}`];
 		}
 		else
 		{

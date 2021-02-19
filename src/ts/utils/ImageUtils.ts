@@ -73,6 +73,11 @@ export class ImageUtils
 	 */
 	public static rotateImage(image: HTMLImageElement, angle: number, filter: string = "")
 	{
+		if (angle === 0)
+		{
+			return image.src;
+		}
+
 		const boundaryRad = Math.atan(image.width / image.height);
 		let degree = angle % 360;
 		if (degree < 0)
