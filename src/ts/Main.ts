@@ -1,20 +1,8 @@
-import { FileProcessor } from 'FileProcessor';
+import {PDFEditor} from "PDFEditor";
 
 export class Main
 {
-	public static instance: Main;
-	public static getInstance(): Main
-	{
-		return Main.instance || new Main();
-	}
-
-	private _fileDropper: FileProcessor;
-
-	constructor()
-	{
-		Main.instance = this;
-		this._fileDropper = new FileProcessor();
-	}
+	private _pdfEditor: PDFEditor = new PDFEditor();
 }
 
-const main = Main.getInstance();
+const main = new Main();

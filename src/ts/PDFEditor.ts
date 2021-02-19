@@ -1,4 +1,5 @@
 import {PDFDocument} from "pdf-lib";
+import {FileSelector} from "utils/FileSelector";
 import {FileUtils} from "utils/FileUtils";
 import {HTMLUtils} from "utils/HTMLUtils";
 import {ImageUtils} from "utils/ImageUtils";
@@ -14,10 +15,9 @@ export interface IOnePagePDFDoc
 	originalPageNumber: number; // its pagenumber in the original pdf document
 }
 
-export class FileProcessor
+export class PDFEditor
 {
-	private _uploadDiv: HTMLElement = document.getElementById("uploadDiv");
-	private _inputElement: HTMLInputElement = document.createElement("input");
+	private _fileSelector: FileSelector;
 	private _thumbnails: HTMLElement = document.getElementById("thumbnails");
 	private _info: HTMLElement = document.getElementById("info");
 	private _downloadBtn: HTMLElement = document.getElementById("downloadBtn");
@@ -26,10 +26,7 @@ export class FileProcessor
 
 	constructor()
 	{
-		this._inputElement.type = "file";
-		this._inputElement.accept = "application/pdf";
-		this._inputElement.multiple = true;
-
+		this._fileSelector = new FileSelector(this.processFiles);
 		this.addEventListeners();
 	}
 
@@ -47,46 +44,11 @@ export class FileProcessor
 
 	private addEventListeners()
 	{
-		this._inputElement.addEventListener("change", (event: Event) =>
-		{
-			const files = this._inputElement.files;
-			this.processFiles(files);
-		});
-
+		this._fileSelector.addEventListeners();
 		this._downloadBtn.onclick = this.onDownloadClick;
-
-		this._uploadDiv.addEventListener("click", () =>
-		{
-			this._inputElement.click();
-		});
-
-		document.addEventListener("dragover", (event: Event) =>
-		{
-			event.preventDefault();
-			this._uploadDiv.classList.add("active");
-		});
-
-		document.addEventListener("dragover", (event: Event) =>
-		{
-			event.preventDefault();
-			this._uploadDiv.classList.add("active");
-		});
-
-		document.addEventListener("dragleave", (event: Event) =>
-		{
-			this._uploadDiv.classList.remove("active");
-		});
-
-		document.addEventListener("drop", (event: DragEvent) =>
-		{
-			event.preventDefault();
-
-			const files = event.dataTransfer.files;
-			this.processFiles(files);
-		});
 	}
 
-	private async processFiles(files: FileList)
+	private processFiles = async (files: FileList) =>
 	{
 		const fileNames = this._originalFiles.map((file: File) => file.name);
 
@@ -105,14 +67,14 @@ export class FileProcessor
 
 		if (this._originalFiles.length > 0 && newFilesAdded)
 		{
-			this._uploadDiv.classList.add("small");
+			this._fileSelector.newFilesAdded();
 			this._downloadBtn.classList.remove("hidden");
 			this.disableDownloadButton();
 			await this.createListOfPDFs();
 			
 			this.enableDownloadButton();
 		}
-	}
+	};
 
 	private async createListOfPDFs()
 	{
@@ -211,14 +173,6 @@ export class FileProcessor
 
 			return mergedPDF;
 		}
-	}
-
-	private getInfo()
-	{
-		return {
-			fileCount: this._originalFiles.length,
-			pageCount: this._newOnePagePDFObjects.length
-		};
 	}
 
 	private getIndicesFromZeroToN(n: number)
