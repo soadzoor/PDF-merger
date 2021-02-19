@@ -1,5 +1,5 @@
-import { PDFDocument } from "pdf-lib";
-import { FileUtils } from "FileUtils";
+import {PDFDocument} from "pdf-lib";
+import {FileUtils} from "./FileUtils";
 
 export class FileProcessor
 {
@@ -106,9 +106,9 @@ export class FileProcessor
 			{
 				const originalPDFBytes = await FileUtils.readAsArrayBuffer(file);
 				const originalPDFDoc = await PDFDocument.load(originalPDFBytes);
-		
+
 				const pageCount = originalPDFDoc.getPageCount();
-	
+
 				const pages = await this._newPDF.copyPages(originalPDFDoc, this.getIndicesFromZeroToN(pageCount - 1));
 
 				for (const page of pages)
