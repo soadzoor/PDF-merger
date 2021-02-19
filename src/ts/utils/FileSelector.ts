@@ -3,9 +3,9 @@ export class FileSelector
 	private _uploadDiv: HTMLElement = document.getElementById("uploadDiv");
 	private _inputElement: HTMLInputElement = document.createElement("input");
 
-	private processFiles: (files: FileList) => void;
+	private processFiles: (files: FileList) => Promise<void>;
 
-	constructor(processFilesCallback: (files: FileList) => void)
+	constructor(processFilesCallback: (files: FileList) => Promise<void>)
 	{
 		this._inputElement.type = "file";
 		this._inputElement.accept = "application/pdf";
@@ -16,10 +16,11 @@ export class FileSelector
 
 	public addEventListeners()
 	{
-		this._inputElement.addEventListener("change", (event: Event) =>
+		this._inputElement.addEventListener("change", async (event: Event) =>
 		{
 			const files = this._inputElement.files;
-			this.processFiles(files);
+			await this.processFiles(files);
+			this._inputElement.value = "";
 		});
 
 		this._uploadDiv.addEventListener("click", () =>
@@ -57,5 +58,10 @@ export class FileSelector
 	public newFilesAdded()
 	{
 		this._uploadDiv.classList.add("small");
+	}
+
+	public allPagesDeleted()
+	{
+		this._uploadDiv.classList.remove("small");
 	}
 }

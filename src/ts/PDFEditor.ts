@@ -15,6 +15,8 @@ export interface IOnePagePDFDoc
 	thumbnail: string;
 	originalRotation: number; // 0 | 90 | 180 | 270
 	originalFileName: string;
+	originalFileSize: number; // for caching the thumbnail
+	originalFileLastModified: number;
 	originalPageNumber: number; // its pagenumber in the original pdf document
 }
 
@@ -24,7 +26,6 @@ export class PDFEditor
 	private _thumbnails: HTMLElement = document.getElementById("thumbnails");
 	private _info: HTMLElement = document.getElementById("info");
 	private _downloadBtn: HTMLElement = document.getElementById("downloadBtn");
-	private _originalFiles: File[] = []; // PDF files
 	private _newOnePagePDFObjects: IOnePagePDFDoc[] = []; // one paged pdfs
 	private _savedScrollValue: number = 0;
 	private readonly _thumbnailSize: number = 400;
@@ -55,36 +56,27 @@ export class PDFEditor
 
 	private processFiles = async (files: FileList) =>
 	{
-		const fileNames = this._originalFiles.map((file: File) => file.name);
-
-		let newFilesAdded = false;
-
+		const listOfNewFiles: File[] = [];
 		for (let i = 0; i < files.length; ++i)
 		{
 			const file = files[i];
-
-			if (!fileNames.includes(file.name))
-			{
-				this._originalFiles.push(file);
-				newFilesAdded = true;
-			}
+			listOfNewFiles.push(file);
 		}
 
-		if (this._originalFiles.length > 0 && newFilesAdded)
+		if (listOfNewFiles.length > 0 && files.length > 0)
 		{
 			this._fileSelector.newFilesAdded();
 			this._downloadBtn.classList.remove("hidden");
 			this.disableDownloadButton();
-			await this.createListOfPDFs();
+			await this.addPDFsToList(listOfNewFiles);
 
 			this.enableDownloadButton();
 		}
 	};
 
-	private async createListOfPDFs()
+	private async addPDFsToList(originalFiles: File[])
 	{
-		this._newOnePagePDFObjects.length = 0;
-		for (const file of this._originalFiles)
+		for (const file of originalFiles)
 		{
 			const newPDFs = await PDFSplitter.split(file);
 
@@ -99,8 +91,10 @@ export class PDFEditor
 					doc: newPDF,
 					originalRotation: originalRotation,
 					originalFileName: file.name,
+					originalFileSize: file.size,
+					originalFileLastModified: file.lastModified,
 					originalPageNumber: j,
-					thumbnail: null
+					thumbnail: null,
 				});
 			}
 		}
@@ -111,6 +105,8 @@ export class PDFEditor
 	private async refreshThumbnails(scrollType: "toBottom" | "toLastPosition" = "toBottom")
 	{
 		HTMLUtils.clearElement(this._thumbnails);
+
+		const promisesToWaitFor = [];
 
 		for (let i = 0; i < this._newOnePagePDFObjects.length; ++i)
 		{
@@ -124,11 +120,22 @@ export class PDFEditor
 			const firstPage = pdfObject.doc.getPage(0);
 			let currentRotationValue = firstPage.getRotation().angle;
 
-			const thumbnailSrcPromise = PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, labelContent, currentRotationValue);
+			const cachekey = `${labelContent}_${pdfObject.originalFileSize}_${pdfObject.originalFileLastModified}`;
+
+			const thumbnailSrcPromise = PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, cachekey, currentRotationValue);
 			const thumbnail = scrollType === "toBottom" ? await ImageUtils.loadImage(await thumbnailSrcPromise) : document.createElement("img");
 	
 			if (!thumbnail.src)
 			{
+				promisesToWaitFor.push(
+					new Promise<void>((resolve, reject) =>
+					{
+						thumbnail.onload = () =>
+						{
+							resolve();
+						};
+					})
+				);
 				thumbnail.src = await thumbnailSrcPromise;
 			}
 			
@@ -150,7 +157,7 @@ export class PDFEditor
 			{
 				currentRotationValue = MathUtils.clampDegreesBetweenFullCircle(currentRotationValue - 90);
 				firstPage.setRotation(degrees(currentRotationValue));
-				thumbnail.src = await PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, labelContent, currentRotationValue);
+				thumbnail.src = await PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, cachekey, currentRotationValue);
 			};
 
 			const onRemoveClick = () =>
@@ -163,7 +170,7 @@ export class PDFEditor
 			{
 				currentRotationValue = MathUtils.clampDegreesBetweenFullCircle(currentRotationValue + 90);
 				firstPage.setRotation(degrees(currentRotationValue));
-				thumbnail.src = await PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, labelContent, currentRotationValue);
+				thumbnail.src = await PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, cachekey, currentRotationValue);
 			};
 
 			const onArrowDownClick = i < this._newOnePagePDFObjects.length - 1 ? () =>
@@ -186,10 +193,41 @@ export class PDFEditor
 
 			this._thumbnails.appendChild(thumbnailContainer);
 
-			this._thumbnails.scrollTop = scrollType === "toBottom" ? this._thumbnails.scrollHeight : this._savedScrollValue;
+			if (scrollType === "toBottom")
+			{
+				this._thumbnails.scrollTop = this._thumbnails.scrollHeight;
+			}
 
-			this._info.textContent = `Merged PDF will be generated with ${i + 1} pages`;
+			this.updateInfoText(i + 1);
 		}
+
+		await Promise.all(promisesToWaitFor);
+
+		if (scrollType === "toLastPosition")
+		{
+			this._thumbnails.scrollTop = this._savedScrollValue;
+		}
+		else
+		{
+			this._thumbnails.scrollTop = this._thumbnails.scrollHeight;
+		}
+
+		if (this._newOnePagePDFObjects.length === 0)
+		{
+			this.disableDownloadButton();
+			this._fileSelector.allPagesDeleted();
+			this._info.textContent = "";
+			this._downloadBtn.classList.add("hidden");
+		}
+		else
+		{
+			this.updateInfoText(this._newOnePagePDFObjects.length);
+		}
+	}
+
+	private updateInfoText(numberOfPages: number)
+	{
+		this._info.textContent = `Merged PDF will be generated with ${numberOfPages} pages`;
 	}
 
 	private thumbnailsReorderedCallback()

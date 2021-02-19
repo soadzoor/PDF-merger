@@ -27,18 +27,18 @@ export class ImageUtils
 		return ImageUtils._ctx;
 	}
 
-	public static loadImage(url: string)
+	public static loadImage(url: string, imgElement: HTMLImageElement = document.createElement("img"))
 	{
 		return new Promise<HTMLImageElement>((resolve, reject) =>
 		{
-			const img = document.createElement("img");
-			img.crossOrigin = "anonymous";
-			img.onload = () =>
+			imgElement;
+			imgElement.crossOrigin = "anonymous";
+			imgElement.onload = () =>
 			{
-				resolve(img);
+				resolve(imgElement);
 			};
 
-			img.src = url;
+			imgElement.src = url;
 		});
 	}
 
