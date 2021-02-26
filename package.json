@@ -18,12 +18,12 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "14.14.30",
-    "esbuild": "0.8.49",
+    "esbuild": "0.8.52",
     "pdf-lib": "1.16.0",
-    "pdfjs-dist": "2.5.207",
+    "pdfjs-dist": "2.6.347",
     "shx": "0.3.3",
     "tslib": "2.1.0",
-    "typescript": "4.1.5",
+    "typescript": "4.2.2",
     "uglifycss": "0.0.29"
   }
 }

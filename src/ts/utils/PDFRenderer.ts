@@ -1,7 +1,9 @@
 import {PDFDocument} from "pdf-lib";
 import {FileUtils} from "utils/FileUtils";
-import * as pdfjs from "pdfjs-dist";
 import {ImageUtils} from "./ImageUtils";
+
+import * as pdfjs from "pdfjs-dist";
+import {PDFPageProxy, PDFDocumentProxy} from "pdfjs-dist/types/display/api";
 pdfjs.GlobalWorkerOptions.workerSrc = "libs/pdfjs/pdf.worker.min.js";
 
 interface ISnapShotConfig
@@ -17,8 +19,8 @@ interface ISnapShotConfig
 export class PDFRenderer
 {
 	private static _url: string;
-	private static _pdf: pdfjs.PDFProxy;
-	private static _page: pdfjs.PDFPageProxy;
+	private static _pdf: PDFDocumentProxy;
+	private static _page: PDFPageProxy;
 	private static _pdfViewBox: number[];
 	private static _cropLeft: number;
 	private static _cropBottom: number;
@@ -67,7 +69,7 @@ export class PDFRenderer
 		}
 		PDFRenderer._url = url;
 
-		PDFRenderer._pdf = await pdfjs.getDocument(PDFRenderer._url).promise;
+		PDFRenderer._pdf = await pdfjs.getDocument({url: PDFRenderer._url, verbosity: pdfjs.VerbosityLevel.ERRORS}).promise;
 
 		console.log("PDF Loaded");
 
@@ -100,8 +102,7 @@ export class PDFRenderer
 	{
 		if (PDFRenderer._page)
 		{
-			const viewport: pdfjs.PDFPageViewport = PDFRenderer._page.getViewport({
-				viewBox: PDFRenderer._pdfViewBox,
+			const viewport = PDFRenderer._page.getViewport({
 				scale: config.scale,
 				rotation: PDFRenderer._page.rotate,
 				offsetX: -config.offsetX,
@@ -135,7 +136,8 @@ export class PDFRenderer
 			const renderContext = {
 				canvasContext: PDFRenderer._context,
 				background: config.isTransparent ? "rgb(255, 255, 255, 0)" : null,
-				viewport: viewport
+				viewport: viewport,
+				//enableWebGL: true
 			};
 
 			await PDFRenderer._page.render(renderContext).promise;
@@ -227,8 +229,9 @@ export class PDFRenderer
 	 * @param maxSize max(width, height)
 	 * @param pdf 
 	 * @param cacheKey If you'd like to cache the thumbnail, you should give a unique name. It will be saved at _cache[cacheKey]
+	 * @param rotationDelta rotation difference between the original one
 	 */
-	public static async getThumbnailAndViewBox(maxSize: number, pdf: PDFDocument, cacheKey: string, rotation: number)
+	public static async getThumbnailAndViewBox(maxSize: number, pdf: PDFDocument, cacheKey: string, rotationDelta: number)
 	{
 		if (cacheKey)
 		{
@@ -237,17 +240,17 @@ export class PDFRenderer
 				this._thumbnailCache[cacheKey] = PDFRenderer.getFullImageURLFromPDF(maxSize, pdf);
 			}
 
-			if (!this._thumbnailCache[`${cacheKey}_${rotation}`])
+			if (!this._thumbnailCache[`${cacheKey}_${rotationDelta}`])
 			{
 				const imgSrcWithoutRotation = await this._thumbnailCache[cacheKey];
 				const img = await ImageUtils.loadImage(imgSrcWithoutRotation);
-				this._thumbnailCache[`${cacheKey}_${rotation}`] = new Promise<string>((resolve, reject) =>
+				this._thumbnailCache[`${cacheKey}_${rotationDelta}`] = new Promise<string>((resolve, reject) =>
 				{
-					resolve(ImageUtils.rotateImage(img, rotation));
+					resolve(ImageUtils.rotateImage(img, rotationDelta));
 				});
 			}
 
-			return this._thumbnailCache[`${cacheKey}_${rotation}`];
+			return this._thumbnailCache[`${cacheKey}_${rotationDelta}`];
 		}
 		else
 		{
