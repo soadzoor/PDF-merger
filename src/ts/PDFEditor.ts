@@ -1,4 +1,5 @@
 import {degrees, PDFDocument} from "pdf-lib";
+import {ConfirmWindow} from "popup/ConfirmWindow";
 import {FileSelector} from "utils/FileSelector";
 import {FileUtils} from "utils/FileUtils";
 import {Functions} from "utils/Functions";
@@ -162,10 +163,14 @@ export class PDFEditor
 				thumbnail.src = await PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, cachekey, rotationDelta);
 			};
 
-			const onRemoveClick = () =>
+			const onRemoveClick = async () =>
 			{
-				this._newOnePagePDFObjects.splice(i, 1);
-				this.thumbnailsReorderedCallback();
+				const confirmed = await ConfirmWindow.open("Are you sure you want to delete this page?");
+				if (confirmed)
+				{
+					this._newOnePagePDFObjects.splice(i, 1);
+					this.thumbnailsReorderedCallback();
+				}
 			};
 
 			const onRotateCWClick = async () =>
