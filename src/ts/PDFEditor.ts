@@ -119,10 +119,11 @@ export class PDFEditor
 
 			const firstPage = pdfObject.doc.getPage(0);
 			let currentRotationValue = firstPage.getRotation().angle;
+			let rotationDelta = MathUtils.clampDegreesBetweenFullCircle(currentRotationValue - pdfObject.originalRotation);
 
 			const cachekey = `${labelContent}_${pdfObject.originalFileSize}_${pdfObject.originalFileLastModified}`;
 
-			const thumbnailSrcPromise = PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, cachekey, currentRotationValue);
+			const thumbnailSrcPromise = PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, cachekey, rotationDelta);
 			const thumbnail = scrollType === "toBottom" ? await ImageUtils.loadImage(await thumbnailSrcPromise) : document.createElement("img");
 	
 			if (!thumbnail.src)
@@ -156,8 +157,9 @@ export class PDFEditor
 			const onRotateCCWClick = async () =>
 			{
 				currentRotationValue = MathUtils.clampDegreesBetweenFullCircle(currentRotationValue - 90);
+				rotationDelta = MathUtils.clampDegreesBetweenFullCircle(currentRotationValue - pdfObject.originalRotation);
 				firstPage.setRotation(degrees(currentRotationValue));
-				thumbnail.src = await PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, cachekey, currentRotationValue);
+				thumbnail.src = await PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, cachekey, rotationDelta);
 			};
 
 			const onRemoveClick = () =>
@@ -169,8 +171,9 @@ export class PDFEditor
 			const onRotateCWClick = async () =>
 			{
 				currentRotationValue = MathUtils.clampDegreesBetweenFullCircle(currentRotationValue + 90);
+				rotationDelta = MathUtils.clampDegreesBetweenFullCircle(currentRotationValue - pdfObject.originalRotation);
 				firstPage.setRotation(degrees(currentRotationValue));
-				thumbnail.src = await PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, cachekey, currentRotationValue);
+				thumbnail.src = await PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, cachekey, rotationDelta);
 			};
 
 			const onArrowDownClick = i < this._newOnePagePDFObjects.length - 1 ? () =>

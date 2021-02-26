@@ -68,7 +68,7 @@ export class ImageUtils
 	/**
 	 * https://stackoverflow.com/questions/17411991/html5-canvas-rotate-image
 	 * https://jsfiddle.net/casamia743/xqh48gno/
-	 * angle in degrees
+	 * angle in degrees (ClockWise (CW) is the positive direction)
 	 * returns base64 png
 	 */
 	public static rotateImage(image: HTMLImageElement, angle: number, filter: string = "")
