@@ -86,7 +86,7 @@ export class PDFEditor
 				const newPDF = newPDFs[j];
 
 				const firstPage = newPDF.getPage(0);
-				let originalRotation = MathUtils.clampDegreesBetweenFullCircle(firstPage.getRotation().angle);
+				const originalRotation = MathUtils.clampDegreesBetweenFullCircle(firstPage.getRotation().angle);
 
 				this._newOnePagePDFObjects.push({
 					doc: newPDF,
