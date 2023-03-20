@@ -60,6 +60,13 @@ async function buildApp()
 	shx(`mkdir ${buildFolder}/`);
 	shx(`cp src/index.html ${buildFolder}/index.html`);
 
+	shx(`mkdir -p ${buildFolder}/libs/pdfjs`);
+
+	const originalPDFWorkerJsPath = `temp/libs/pdfjs/pdf.worker.min.js`;
+	const newPDFWorkerJsPath = `libs/pdfjs/pdf.worker.min.${timeStamp}.js`;
+
+	shx(`cp ${NODE_MODULES_PATH}/pdfjs-dist/build/pdf.worker.min.js ${buildFolder}/${newPDFWorkerJsPath}`);
+
 	assets(buildFolder);
 
 	const methodsToDoAfterBundling: (() => void | Promise<any>)[] = [
@@ -118,6 +125,7 @@ async function buildApp()
 	{
 		await method();
 	}
+	await replaceTextInFile(finalJsFullPath, originalPDFWorkerJsPath, newPDFWorkerJsPath);
 
 	if (isProduction)
 	{

@@ -129,6 +129,15 @@ export abstract class PopupWindow<T>
 		const buttonContainer = document.createElement("div");
 		buttonContainer.className = "buttonContainer hbox flexCenter";
 
+		if (this._config.cancel)
+		{
+			const cancelButton = document.createElement("div");
+			cancelButton.className = "cancel btn";
+			cancelButton.textContent = this._config.cancel;
+			cancelButton.onclick = this.onCancelClick;
+			buttonContainer.appendChild(cancelButton);
+		}
+
 		this._okButton.className = "ok btn";
 		this._okButton.textContent = this._config.ok;
 		this._okButton.onclick = this.onOkClick;
@@ -139,15 +148,6 @@ export abstract class PopupWindow<T>
 		}
 
 		buttonContainer.appendChild(this._okButton);
-
-		if (this._config.cancel)
-		{
-			const cancelButton = document.createElement("div");
-			cancelButton.className = "cancel btn";
-			cancelButton.textContent = this._config.cancel;
-			cancelButton.onclick = this.onCancelClick;
-			buttonContainer.appendChild(cancelButton);
-		}
 
 		popupWindow.appendChild(buttonContainer);
 

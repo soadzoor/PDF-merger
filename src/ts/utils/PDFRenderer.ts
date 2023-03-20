@@ -1,10 +1,9 @@
-import {PDFDocument} from "pdf-lib";
 import * as pdfjs from "pdfjs-dist";
+import {PDFDocument} from "pdf-lib";
 import type {PDFPageProxy, PDFDocumentProxy} from "pdfjs-dist/types/src/display/api";
 import {FileUtils} from "./FileUtils";
 import {ImageUtils} from "./ImageUtils";
-
-pdfjs.GlobalWorkerOptions.workerSrc = "libs/pdfjs/pdf.worker.min.js";
+pdfjs.GlobalWorkerOptions.workerSrc = "temp/libs/pdfjs/pdf.worker.min.js";
 
 interface ISnapShotConfig
 {

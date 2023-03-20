@@ -184,12 +184,12 @@ body {
 .thumbnailContainer {
 	margin-top: 15px;
 	margin-bottom: 15px;
-}
-
-.thumbnailContainer .label {
-	margin: 0 10px;
-	word-break: break-word;
-	width: 500px;
+	.label {
+		text-align: center;
+		margin: 0 10px;
+		word-break: break-word;
+		width: 500px;
+	}
 }
 
 .thumbnail {
@@ -224,4 +224,39 @@ body {
 
 .rotation.ccw {
 	transform: scale(-1, 1);
+}
+
+.infoButton {
+	margin-top: 15px;
+}
+
+.propInfo {
+	margin-left: 20px;
+	> .hbox {
+		margin: 5px;
+	}
+}
+
+.pdfDetails {
+	max-height: calc(100vh - 200px);
+	overflow: auto;
+}
+
+input {
+	padding: 10px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	font-size: 16px;
+	font-family: Arial, sans-serif;
+	color: #333;
+}
+  
+input:focus {
+	outline: none;
+	border-color: #0077cc;
+	box-shadow: 0 0 5px #0077cc;
+}
+  
+input::placeholder {
+	color: #999;
 }

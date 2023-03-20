@@ -1,5 +1,7 @@
-import {degrees, PDFDocument} from "pdf-lib";
+import {degrees, PDFDocument, type PDFPage} from "pdf-lib";
 import {ConfirmWindow} from "./popup/ConfirmWindow";
+import type {IPDFDetails} from "./popup/PDFDetailsWindow";
+import {PDFDetailsWindow} from "./popup/PDFDetailsWindow";
 import {FileSelector} from "./utils/FileSelector";
 import {FileUtils} from "./utils/FileUtils";
 import {Functions} from "./utils/Functions";
@@ -14,7 +16,6 @@ interface IOnePagePDFDoc
 {
 	doc: PDFDocument;
 	thumbnail: string;
-	originalRotation: number; // 0 | 90 | 180 | 270
 	originalFileName: string;
 	originalFileSize: number; // for caching the thumbnail
 	originalFileLastModified: number;
@@ -85,12 +86,8 @@ export class PDFEditor
 			{
 				const newPDF = newPDFs[j];
 
-				const firstPage = newPDF.getPage(0);
-				const originalRotation = MathUtils.clampDegreesBetweenFullCircle(firstPage.getRotation().angle);
-
 				this._newOnePagePDFObjects.push({
 					doc: newPDF,
-					originalRotation: originalRotation,
 					originalFileName: file.name,
 					originalFileSize: file.size,
 					originalFileLastModified: file.lastModified,
@@ -100,7 +97,66 @@ export class PDFEditor
 			}
 		}
 
-		await this.refreshThumbnails();
+		return this.refreshThumbnails();
+	}
+
+	private getPageDetails(page: PDFPage): IPDFDetails
+	{
+		return {
+			artBox: page.getArtBox(),
+			bleedBox: page.getBleedBox(),
+			cropBox: page.getCropBox(),
+			mediaBox: page.getMediaBox(),
+			trimBox: page.getTrimBox(),
+			size: page.getSize(),
+			position: page.getPosition(),
+			rotation: page.getRotation(),
+		};
+	}
+
+	private createInfoButton = (page: PDFPage, thumbnailId: string, pdfDoc: PDFDocument, ) =>
+	{
+		const infoButton = document.createElement("div");
+		infoButton.classList.add("btn");
+		infoButton.classList.add("infoButton");
+		infoButton.textContent = "More information...";
+
+		infoButton.onclick = async () =>
+		{
+			const pageDetails: IPDFDetails = this.getPageDetails(page);
+			const result = await PDFDetailsWindow.open("PDF Details", pageDetails);
+
+			if (result)
+			{
+				page.setArtBox(result.artBox.x, result.artBox.y, result.artBox.width, result.artBox.height);
+				page.setBleedBox(result.bleedBox.x, result.bleedBox.y, result.bleedBox.width, result.bleedBox.height);
+				page.setCropBox(result.cropBox.x, result.cropBox.y, result.cropBox.width, result.cropBox.height);
+				page.setMediaBox(result.mediaBox.x, result.mediaBox.y, result.mediaBox.width, result.mediaBox.height);
+				page.setTrimBox(result.trimBox.x, result.trimBox.y, result.trimBox.width, result.trimBox.height);
+				page.setSize(result.size.width, result.size.height);
+				page.translateContent(result.position.x, result.position.y);
+				page.setRotation({type: result.rotation.type, angle: MathUtils.clampDegreesBetweenFullCircle(result.rotation.angle)});
+
+				const thumbnail = document.getElementById(thumbnailId) as HTMLImageElement;
+				const cacheKey = this.getCacheKey(thumbnailId, page);
+				thumbnail.src = await PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfDoc, cacheKey, page.getRotation().angle);
+			}
+		};
+
+		return infoButton;
+	};
+
+	private getThumbnailId(pdfObject: IOnePagePDFDoc): string
+	{
+		return `${pdfObject.originalFileName}_${pdfObject.originalPageNumber}_${pdfObject.originalFileSize}_${pdfObject.originalFileLastModified}`;
+	}
+
+	private getCacheKey(thumbnailId: string, firstPage: PDFPage): string
+	{
+		const pageDetails: Partial<IPDFDetails> = this.getPageDetails(firstPage);
+		delete pageDetails.rotation; // we don't want to rerender the whole PDF just because the rotation has changed. We rotate the existing image instead
+
+		return `${thumbnailId}_${JSON.stringify(pageDetails)}`;
 	}
 
 	private async refreshThumbnails(scrollType: "toBottom" | "toLastPosition" = "toBottom")
@@ -119,12 +175,11 @@ export class PDFEditor
 			const labelContent = `${pdfObject.originalFileName}: page ${pdfObject.originalPageNumber + 1}`;
 
 			const firstPage = pdfObject.doc.getPage(0);
-			let currentRotationValue = firstPage.getRotation().angle;
-			let rotationDelta = MathUtils.clampDegreesBetweenFullCircle(currentRotationValue - pdfObject.originalRotation);
+			const rotationValue = MathUtils.clampDegreesBetweenFullCircle(firstPage.getRotation().angle - firstPage.getRotation().angle);
 
-			const cachekey = `${labelContent}_${pdfObject.originalFileSize}_${pdfObject.originalFileLastModified}`;
+			const thumbnailId = this.getThumbnailId(pdfObject);
 
-			const thumbnailSrcPromise = PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, cachekey, rotationDelta);
+			const thumbnailSrcPromise = PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, this.getCacheKey(thumbnailId, firstPage), rotationValue);
 			const thumbnail = scrollType === "toBottom" ? await ImageUtils.loadImage(await thumbnailSrcPromise) : document.createElement("img");
 
 			if (!thumbnail.src)
@@ -142,6 +197,7 @@ export class PDFEditor
 			}
 
 			thumbnail.classList.add("thumbnail");
+			thumbnail.id = thumbnailId;
 
 			const label = document.createElement("div");
 			label.classList.add("label");
@@ -157,10 +213,9 @@ export class PDFEditor
 
 			const onRotateCCWClick = async () =>
 			{
-				currentRotationValue = MathUtils.clampDegreesBetweenFullCircle(currentRotationValue - 90);
-				rotationDelta = MathUtils.clampDegreesBetweenFullCircle(currentRotationValue - pdfObject.originalRotation);
+				const currentRotationValue = MathUtils.clampDegreesBetweenFullCircle(firstPage.getRotation().angle - 90);
 				firstPage.setRotation(degrees(currentRotationValue));
-				thumbnail.src = await PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, cachekey, rotationDelta);
+				thumbnail.src = await PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, this.getCacheKey(thumbnailId, firstPage), currentRotationValue);
 			};
 
 			const onRemoveClick = async () =>
@@ -175,10 +230,10 @@ export class PDFEditor
 
 			const onRotateCWClick = async () =>
 			{
-				currentRotationValue = MathUtils.clampDegreesBetweenFullCircle(currentRotationValue + 90);
-				rotationDelta = MathUtils.clampDegreesBetweenFullCircle(currentRotationValue - pdfObject.originalRotation);
+				const currentRotationValue = MathUtils.clampDegreesBetweenFullCircle(firstPage.getRotation().angle + 90);
+
 				firstPage.setRotation(degrees(currentRotationValue));
-				thumbnail.src = await PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, cachekey, rotationDelta);
+				thumbnail.src = await PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, this.getCacheKey(thumbnailId, firstPage), currentRotationValue);
 			};
 
 			const onArrowDownClick = i < this._newOnePagePDFObjects.length - 1 ? () =>
@@ -197,7 +252,15 @@ export class PDFEditor
 
 			thumbnailContainer.appendChild(buttons);
 			thumbnailContainer.appendChild(thumbnail);
-			thumbnailContainer.appendChild(label);
+
+			const infoSection = document.createElement("div");
+			infoSection.classList.add("infoSection");
+			infoSection.classList.add("vbox");
+			infoSection.classList.add("flexCenter");
+			infoSection.appendChild(label);
+			infoSection.appendChild(this.createInfoButton(firstPage, thumbnailId, pdfObject.doc));
+
+			thumbnailContainer.appendChild(infoSection);
 
 			this._thumbnails.appendChild(thumbnailContainer);
 
