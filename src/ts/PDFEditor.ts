@@ -10,7 +10,7 @@ import {MathUtils} from "./utils/MathUtils";
 import {PDFRenderer} from "./utils/PDFRenderer";
 import {PDFSplitter} from "./utils/PDFSplitter";
 
-export interface IOnePagePDFDoc
+interface IOnePagePDFDoc
 {
 	doc: PDFDocument;
 	thumbnail: string;
@@ -126,7 +126,7 @@ export class PDFEditor
 
 			const thumbnailSrcPromise = PDFRenderer.getThumbnailAndViewBox(this._thumbnailSize, pdfObject.doc, cachekey, rotationDelta);
 			const thumbnail = scrollType === "toBottom" ? await ImageUtils.loadImage(await thumbnailSrcPromise) : document.createElement("img");
-	
+
 			if (!thumbnail.src)
 			{
 				promisesToWaitFor.push(
@@ -140,7 +140,7 @@ export class PDFEditor
 				);
 				thumbnail.src = await thumbnailSrcPromise;
 			}
-			
+
 			thumbnail.classList.add("thumbnail");
 
 			const label = document.createElement("div");

@@ -1,9 +1,9 @@
 import {PDFDocument} from "pdf-lib";
+import * as pdfjs from "pdfjs-dist";
+import type {PDFPageProxy, PDFDocumentProxy} from "pdfjs-dist/types/src/display/api";
 import {FileUtils} from "./FileUtils";
 import {ImageUtils} from "./ImageUtils";
 
-import * as pdfjs from "pdfjs-dist";
-import {PDFPageProxy, PDFDocumentProxy} from "pdfjs-dist/types/src/display/api";
 pdfjs.GlobalWorkerOptions.workerSrc = "libs/pdfjs/pdf.worker.min.js";
 
 interface ISnapShotConfig
@@ -33,7 +33,7 @@ export class PDFRenderer
 		snapShotConfig: ISnapShotConfig;
 		pdf?: PDFDocument;
 		tileID?: string;
-		resolve: (url: string) => void
+		resolve: (url: string) => void;
 	}[] = [];
 	private static _isProcessing: boolean = false;
 
@@ -195,8 +195,8 @@ export class PDFRenderer
 	}
 
 	/**
-	 * 
-	 * @param maxSize 
+	 *
+	 * @param maxSize
 	 * @param pdf If omitted, the last initialized PDF will be used
 	 */
 	private static getFullImageURLFromPDF(maxSize: number, pdf: PDFDocument)
@@ -225,9 +225,9 @@ export class PDFRenderer
 	}
 
 	/**
-	 * 
+	 *
 	 * @param maxSize max(width, height)
-	 * @param pdf 
+	 * @param pdf
 	 * @param cacheKey If you'd like to cache the thumbnail, you should give a unique name. It will be saved at _cache[cacheKey]
 	 * @param rotationDelta rotation difference between the original one
 	 */

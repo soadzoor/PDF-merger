@@ -42,7 +42,7 @@ export class ImageUtils
 		});
 	}
 
-	private static calcProjectedRectSizeOfRotatedRect(size: {width: number, height: number}, rad: number)
+	private static calcProjectedRectSizeOfRotatedRect(size: {width: number; height: number}, rad: number)
 	{
 		const {width, height} = size;
 

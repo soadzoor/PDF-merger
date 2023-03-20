@@ -50,7 +50,7 @@ export class FileUtils
 		document.body.removeChild(a);
 	}
 
-	public static async canvasToBlob(canvas: HTMLCanvasElement)
+	public static canvasToBlob(canvas: HTMLCanvasElement)
 	{
 		return new Promise<Blob | null>((resolve, reject) =>
 		{

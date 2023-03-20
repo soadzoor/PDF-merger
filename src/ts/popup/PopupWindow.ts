@@ -6,7 +6,7 @@
 import {ObjectUtils} from "../utils/ObjectUtils";
 import {HTMLUtils} from "../utils/HTMLUtils";
 
-export interface IPopupWindowConfig
+interface IPopupWindowConfig
 {
 	backdrop?: boolean;
 	ok: string | null; // The label of the OK button
@@ -46,7 +46,7 @@ export abstract class PopupWindow<T>
 
 	private onKeyDown = (event: KeyboardEvent) =>
 	{
-		switch(event.key)
+		switch (event.key)
 		{
 			case "Enter":
 				if (this._isOkButtonEnabled)
@@ -120,7 +120,7 @@ export abstract class PopupWindow<T>
 		message.className = "message";
 		message.innerHTML = this._props.message || "";
 		popupWindow.appendChild(message);
-		
+
 		if (this._additionalElements)
 		{
 			popupWindow.appendChild(this._additionalElements);
