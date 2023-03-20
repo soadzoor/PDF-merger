@@ -4,3 +4,4 @@ build/dev
 build/prod
 node_modules/
 /package-lock.json
+.eslintcache

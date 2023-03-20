@@ -52,9 +52,9 @@ export class FileUtils
 
 	public static async canvasToBlob(canvas: HTMLCanvasElement)
 	{
-		return new Promise<Blob>((resolve, reject) =>
+		return new Promise<Blob | null>((resolve, reject) =>
 		{
-			canvas.toBlob((blob: Blob) =>
+			canvas.toBlob((blob: Blob | null) =>
 			{
 				resolve(blob);
 			});

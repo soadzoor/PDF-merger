@@ -1,14 +1,14 @@
 import {degrees, PDFDocument} from "pdf-lib";
-import {ConfirmWindow} from "popup/ConfirmWindow";
-import {FileSelector} from "utils/FileSelector";
-import {FileUtils} from "utils/FileUtils";
-import {Functions} from "utils/Functions";
-import {HTMLFactory} from "utils/HTMLFactory";
-import {HTMLUtils} from "utils/HTMLUtils";
-import {ImageUtils} from "utils/ImageUtils";
-import {MathUtils} from "utils/MathUtils";
-import {PDFRenderer} from "utils/PDFRenderer";
-import {PDFSplitter} from "utils/PDFSplitter";
+import {ConfirmWindow} from "./popup/ConfirmWindow";
+import {FileSelector} from "./utils/FileSelector";
+import {FileUtils} from "./utils/FileUtils";
+import {Functions} from "./utils/Functions";
+import {HTMLFactory} from "./utils/HTMLFactory";
+import {HTMLUtils} from "./utils/HTMLUtils";
+import {ImageUtils} from "./utils/ImageUtils";
+import {MathUtils} from "./utils/MathUtils";
+import {PDFRenderer} from "./utils/PDFRenderer";
+import {PDFSplitter} from "./utils/PDFSplitter";
 
 export interface IOnePagePDFDoc
 {
@@ -24,9 +24,9 @@ export interface IOnePagePDFDoc
 export class PDFEditor
 {
 	private _fileSelector: FileSelector;
-	private _thumbnails: HTMLElement = document.getElementById("thumbnails");
-	private _info: HTMLElement = document.getElementById("info");
-	private _downloadBtn: HTMLElement = document.getElementById("downloadBtn");
+	private _thumbnails: HTMLElement = document.getElementById("thumbnails")!;
+	private _info: HTMLElement = document.getElementById("info")!;
+	private _downloadBtn: HTMLElement = document.getElementById("downloadBtn")!;
 	private _newOnePagePDFObjects: IOnePagePDFDoc[] = []; // one paged pdfs
 	private _savedScrollValue: number = 0;
 	private readonly _thumbnailSize: number = 400;
@@ -95,7 +95,7 @@ export class PDFEditor
 					originalFileSize: file.size,
 					originalFileLastModified: file.lastModified,
 					originalPageNumber: j,
-					thumbnail: null,
+					thumbnail: "",
 				});
 			}
 		}
@@ -295,7 +295,10 @@ export class PDFEditor
 	private onDownloadClick = async () =>
 	{
 		const mergedPDF = await this.createMergedPDF();
-		const byteArray = await mergedPDF.save();
-		FileUtils.downloadFileGivenByData(byteArray, "mergedPDF.pdf", "application/pdf");
+		if (mergedPDF)
+		{
+			const byteArray = await mergedPDF.save();
+			FileUtils.downloadFileGivenByData(byteArray, "mergedPDF.pdf", "application/pdf");
+		}
 	};
 }

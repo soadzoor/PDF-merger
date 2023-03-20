@@ -6,7 +6,7 @@ import {ObjectUtils} from "../utils/ObjectUtils";
  */
 export class WarningWindow extends PopupWindow<boolean>
 {
-	protected static readonly _defaultConfig = {
+	protected static override readonly _defaultConfig = {
 		ok: "Ok",
 		cancel: null,
 		backdrop: true
@@ -18,7 +18,7 @@ export class WarningWindow extends PopupWindow<boolean>
 	{
 		super({
 			message: message,
-			config: ObjectUtils.mergeConfig(WarningWindow._defaultConfig, config)
+			config: ObjectUtils.mergeConfig(WarningWindow._defaultConfig, config as any)
 		});
 	}
 

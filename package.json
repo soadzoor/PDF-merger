@@ -1,14 +1,17 @@
 {
-  "name": "Title",
+  "name": "pdf-merger",
   "version": "1.0.0",
-  "description": "Title",
+  "description": "PDF Merger",
   "main": "",
-  "directories": {
-    "doc": "docs"
-  },
+  "type": "module",
   "scripts": {
-    "build:client": "node build/build",
-    "build:client:prod": "node build/build --prod"
+    "start-dev": "npx ts-node --esm build/start.ts",
+    "build-dev": "npx ts-node --esm build/build.ts",
+    "build-prod": "npx ts-node --esm build/build.ts --prod",
+    "eslint-report": "eslint --ignore-path .gitignore --ext .js,.jsx,.ts,.tsx src --report-unused-disable-directives --max-warnings 0 --cache --cache-strategy content",
+    "eslint-fix": "npm run eslint-report -- --fix",
+    "tsc": "tsc",
+    "install-git-hooks": "husky install"
   },
   "repository": {
     "type": "git",
@@ -17,13 +20,21 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/node": "14.14.30",
-    "esbuild": "0.11.5",
-    "pdf-lib": "1.16.0",
-    "pdfjs-dist": "2.7.570",
-    "shx": "0.3.3",
-    "tslib": "2.1.0",
-    "typescript": "4.2.2",
-    "uglifycss": "0.0.29"
+    "@types/node": "18.15.3",
+    "@typescript-eslint/eslint-plugin": "5.55.0",
+    "esbuild": "0.17.12",
+    "esbuild-sass-plugin": "2.7.0",
+    "eslint": "8.36.0",
+    "eslint-import-resolver-typescript": "3.5.3",
+    "eslint-plugin": "1.0.1",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-unused-imports": "2.0.0",
+    "pdf-lib": "1.17.1",
+    "pdfjs-dist": "3.4.120",
+    "shx": "0.3.4",
+    "tslib": "2.5.0",
+    "typescript": "5.0.2",
+    "vite": "4.2.0",
+    "vite-tsconfig-paths": "4.0.7"
   }
 }

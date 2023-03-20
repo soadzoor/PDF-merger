@@ -21,7 +21,7 @@ export class ImageUtils
 	{
 		if (!ImageUtils._ctx)
 		{
-			ImageUtils._ctx = ImageUtils.canvas.getContext("2d");
+			ImageUtils._ctx = ImageUtils.canvas.getContext("2d")!;
 		}
 
 		return ImageUtils._ctx;

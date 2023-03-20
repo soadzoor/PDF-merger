@@ -1,0 +1,169 @@
+{
+	"parser": "@typescript-eslint/parser",
+	"parserOptions": {
+		"project": [
+			"./tsconfig.json"
+		],
+		"ecmaVersion": 2020
+	},
+	"ignorePatterns": [
+		"build/build.ts",
+		"build/start.ts"
+	],
+	"settings": {
+		"import/resolver": {
+			"typescript": {},
+			"node": {
+				"extensions": [
+					".js",
+					".jsx",
+					".ts",
+					".tsx"
+				]
+			}
+		}
+	},
+	"extends": [
+		"plugin:import/errors",
+		"plugin:import/warnings",
+		"plugin:import/typescript"
+	],
+	"plugins": [
+		"import",
+		"@typescript-eslint",
+		"unused-imports"
+	],
+	"rules": {
+		// We're using typescript's resolver
+		"import/no-unresolved": "off",
+		"@typescript-eslint/consistent-type-assertions": [
+			"error",
+			{
+				"assertionStyle": "as"
+			}
+		],
+		"@typescript-eslint/consistent-type-imports": [
+			"error",
+			{
+				"prefer": "type-imports"
+			}
+		],
+		"@typescript-eslint/await-thenable": "error",
+		"@typescript-eslint/type-annotation-spacing": [
+			"error",
+			{
+				"before": false,
+				"after": true,
+				"overrides": {
+					"arrow": {
+						"before": true,
+						"after": true
+					}
+				}
+			}
+		],
+		"@typescript-eslint/member-delimiter-style": [
+			"error",
+			{
+				"multiline": {
+					"delimiter": "semi",
+					"requireLast": true
+				},
+				"singleline": {
+					"delimiter": "semi",
+					"requireLast": false
+				},
+				"multilineDetection": "brackets"
+			}
+		],
+		"eol-last": [
+			"error",
+			"always"
+		],
+		"no-trailing-spaces": "error",
+		"space-infix-ops": "error",
+		"space-before-function-paren": [
+			"error",
+			{
+				"anonymous": "always",
+				"named": "never",
+				"asyncArrow": "always"
+			}
+		],
+		"linebreak-style": [
+			"error",
+			"unix"
+		],
+		"no-multiple-empty-lines": [
+			"error",
+			{
+				"max": 2,
+				"maxEOF": 1,
+				"maxBOF": 0
+			}
+		],
+		"no-extra-semi": "error",
+		"no-unreachable": "error",
+		"quotes": [
+			"error",
+			"double"
+		],
+		"prefer-template": "error",
+		"brace-style": [
+			"warn",
+			"allman",
+			{
+				"allowSingleLine": true
+			}
+		],
+		"object-curly-spacing": [
+			"error",
+			"never"
+		],
+		"no-useless-concat": "error",
+		"curly": "error",
+		"indent": [
+			"error",
+			"tab",
+			{
+				"SwitchCase": 1
+			}
+		],
+		"template-curly-spacing": [
+			"error",
+			"never"
+		],
+		"require-await": "error",
+		"no-alert": [
+			"error"
+		],
+		"dot-location": [
+			"warn",
+			"property"
+		],
+		"import/no-cycle": "error",
+		"import/no-self-import": "error",
+		"import/no-duplicates": "error",
+		"import/order": "error",
+		"import/no-unused-modules": [
+			"error",
+			{
+				"unusedExports": true,
+				"missingExports": true,
+				"ignoreExports": [
+					"src/ts/main.ts"
+				]
+			}
+		],
+		"import/no-extraneous-dependencies": "error",
+		"unused-imports/no-unused-imports": "error",
+		"no-multi-spaces": "error",
+		"no-empty-function": "error",
+		"keyword-spacing": "error",
+		"semi": [
+			"error",
+			"always"
+		],
+		"no-unneeded-ternary": "error"
+	}
+}

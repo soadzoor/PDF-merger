@@ -1,9 +1,9 @@
 import {PDFDocument} from "pdf-lib";
-import {FileUtils} from "utils/FileUtils";
+import {FileUtils} from "./FileUtils";
 import {ImageUtils} from "./ImageUtils";
 
 import * as pdfjs from "pdfjs-dist";
-import {PDFPageProxy, PDFDocumentProxy} from "pdfjs-dist/types/display/api";
+import {PDFPageProxy, PDFDocumentProxy} from "pdfjs-dist/types/src/display/api";
 pdfjs.GlobalWorkerOptions.workerSrc = "libs/pdfjs/pdf.worker.min.js";
 
 interface ISnapShotConfig
@@ -27,7 +27,7 @@ export class PDFRenderer
 	private static _pdfPageWidth: number;
 	private static _pdfPageHeight: number;
 	private static _canvas: HTMLCanvasElement = document.createElement("canvas");
-	private static _context: CanvasRenderingContext2D = PDFRenderer._canvas.getContext("2d");
+	private static _context: CanvasRenderingContext2D = PDFRenderer._canvas.getContext("2d")!;
 
 	private static _queueToProcess: {
 		snapShotConfig: ISnapShotConfig;
@@ -57,7 +57,7 @@ export class PDFRenderer
 
 	public static async savePDFValues(pdf: string | PDFDocument)
 	{
-		let url: string = null;
+		let url: string = "";
 		if (pdf instanceof PDFDocument)
 		{
 			const byteArray = await pdf.save();
@@ -135,7 +135,7 @@ export class PDFRenderer
 			// Render PDF page into canvas context
 			const renderContext = {
 				canvasContext: PDFRenderer._context,
-				background: config.isTransparent ? "rgb(255, 255, 255, 0)" : null,
+				background: config.isTransparent ? "rgb(255, 255, 255, 0)" : undefined,
 				viewport: viewport,
 				//enableWebGL: true
 			};
@@ -163,10 +163,10 @@ export class PDFRenderer
 			{
 				PDFRenderer._isProcessing = true;
 				const queueElement = PDFRenderer._processOrder === "LIFO" ? PDFRenderer._queueToProcess.pop() : PDFRenderer._queueToProcess.shift();
-				const resolve = queueElement.resolve;
-				const snapShotConfig = queueElement.snapShotConfig;
+				const resolve = queueElement!.resolve;
+				const snapShotConfig = queueElement!.snapShotConfig;
 
-				const pdf = queueElement.pdf;
+				const pdf = queueElement!.pdf;
 
 				if (pdf)
 				{
@@ -180,7 +180,7 @@ export class PDFRenderer
 
 				console.log("tile rasterized");
 
-				const url = URL.createObjectURL(await FileUtils.canvasToBlob(context.canvas));
+				const url = URL.createObjectURL((await FileUtils.canvasToBlob(context!.canvas!))!);
 
 				resolve(url);
 
@@ -205,7 +205,7 @@ export class PDFRenderer
 		{
 			PDFRenderer._queueToProcess.push({
 				snapShotConfig: {
-					scale: null, // will be calculated on the fly
+					scale: 0, // will be calculated on the fly
 					maxSize: maxSize,
 					offsetX: 0,
 					offsetY: 0,

@@ -1,16 +1,18 @@
 {
   "compilerOptions": {
-    "baseUrl": "./src/ts/",
+    "noEmit": true,
+    "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "moduleResolution": "node",
+    "verbatimModuleSyntax": true,
     "module": "esnext",
     "importHelpers": true,
-    "target": "es5",
-    "allowJs": true,
-    "sourceMap": true,
-    "outDir": "build/prod/src",
-    "noImplicitAny": false,
-    "strictBindCallApply": true,
+    "target": "es6",
+    "allowJs": false,
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitOverride": true,
+    "skipLibCheck": true,
     "types": [
       "node"
     ],

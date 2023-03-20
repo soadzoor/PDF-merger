@@ -1,6 +1,6 @@
 export class FileSelector
 {
-	private _uploadDiv: HTMLElement = document.getElementById("uploadDiv");
+	private _uploadDiv: HTMLElement = document.getElementById("uploadDiv")!;
 	private _inputElement: HTMLInputElement = document.createElement("input");
 
 	private processFiles: (files: FileList) => Promise<void>;
@@ -18,7 +18,7 @@ export class FileSelector
 	{
 		this._inputElement.addEventListener("change", async (event: Event) =>
 		{
-			const files = this._inputElement.files;
+			const files = this._inputElement.files!;
 			await this.processFiles(files);
 			this._inputElement.value = "";
 		});
@@ -50,7 +50,7 @@ export class FileSelector
 			event.preventDefault();
 			this._uploadDiv.classList.remove("active");
 
-			const files = event.dataTransfer.files;
+			const files = event.dataTransfer!.files;
 			this.processFiles(files);
 		});
 	}

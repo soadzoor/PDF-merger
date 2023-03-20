@@ -3,21 +3,21 @@
  * Example: const confirmed = await ConfirmWindow.open("Are you sure you want to delete this item?");
  */
 
-import {ObjectUtils} from "utils/ObjectUtils";
-import {HTMLUtils} from "utils/HTMLUtils";
+import {ObjectUtils} from "../utils/ObjectUtils";
+import {HTMLUtils} from "../utils/HTMLUtils";
 
 export interface IPopupWindowConfig
 {
 	backdrop?: boolean;
-	ok?: string; // The label of the OK button
-	cancel?: string; // The label of the Cancel button
+	ok: string | null; // The label of the OK button
+	cancel: string | null; // The label of the Cancel button
 	parentElement?: HTMLElement;
 }
 
 interface IPopupWindowProps
 {
 	message: string;
-	config?: IPopupWindowConfig;
+	config?: Partial<IPopupWindowConfig>;
 }
 
 export abstract class PopupWindow<T>
@@ -35,13 +35,13 @@ export abstract class PopupWindow<T>
 	};
 	protected abstract _okValue: T; // the return value when the user clicks "ok"
 	protected abstract _cancelValue: T; // the return value when the user clicks "cancel"
-	protected _additionalElements: HTMLElement;
-	protected resolve: (isOk?: T) => void;
+	protected _additionalElements?: HTMLElement;
+	protected resolve?: (isOk?: T) => void;
 
 	constructor(props: IPopupWindowProps)
 	{
 		this._props = props;
-		this._config = ObjectUtils.mergeConfig(PopupWindow._defaultConfig, props.config || {});
+		this._config = ObjectUtils.mergeConfig<typeof PopupWindow._defaultConfig>(PopupWindow._defaultConfig, props.config || {} as any);
 	}
 
 	private onKeyDown = (event: KeyboardEvent) =>
@@ -69,7 +69,7 @@ export abstract class PopupWindow<T>
 	private onCancelClick = () =>
 	{
 		this.close();
-		this.resolve(this._cancelValue);
+		this.resolve?.(this._cancelValue);
 	};
 
 	private onOkClick = () =>
@@ -77,7 +77,7 @@ export abstract class PopupWindow<T>
 		if (this._isOkButtonEnabled)
 		{
 			this.close();
-			this.resolve(this._okValue);
+			this.resolve?.(this._okValue);
 		}
 	};
 
@@ -99,7 +99,7 @@ export abstract class PopupWindow<T>
 
 		this.draw();
 
-		return new Promise<T>((resolve, reject) =>
+		return new Promise<T | undefined>((resolve, reject) =>
 		{
 			this.resolve = resolve;
 		});
@@ -118,7 +118,7 @@ export abstract class PopupWindow<T>
 
 		const message = document.createElement("div");
 		message.className = "message";
-		message.innerHTML = this._props.message;
+		message.innerHTML = this._props.message || "";
 		popupWindow.appendChild(message);
 		
 		if (this._additionalElements)
@@ -153,6 +153,6 @@ export abstract class PopupWindow<T>
 
 		this._container.appendChild(popupWindow);
 
-		this._config.parentElement.appendChild(this._container);
+		this._config.parentElement?.appendChild(this._container);
 	}
 }

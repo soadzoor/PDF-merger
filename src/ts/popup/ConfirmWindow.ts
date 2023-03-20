@@ -13,7 +13,7 @@ export class ConfirmWindow extends PopupWindow<boolean>
 		super({
 			message: message,
 			config: {
-				backdrop: false
+				backdrop: false,
 			}
 		});
 	}
