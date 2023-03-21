@@ -80,15 +80,15 @@ export class PDFRenderer
 		{
 			PDFRenderer._cropLeft = PDFRenderer._pdfViewBox[0];
 			PDFRenderer._cropBottom = PDFRenderer._pdfViewBox[1];
-			PDFRenderer._pdfPageWidth = PDFRenderer._pdfViewBox[2] - PDFRenderer._cropLeft;
-			PDFRenderer._pdfPageHeight = PDFRenderer._pdfViewBox[3] - PDFRenderer._cropBottom;
+			PDFRenderer._pdfPageWidth = Math.abs(PDFRenderer._pdfViewBox[2] - PDFRenderer._cropLeft);
+			PDFRenderer._pdfPageHeight = Math.abs(PDFRenderer._pdfViewBox[3] - PDFRenderer._cropBottom);
 		}
 		else
 		{
 			PDFRenderer._cropLeft = PDFRenderer._pdfViewBox[1];
 			PDFRenderer._cropBottom = PDFRenderer._pdfViewBox[0];
-			PDFRenderer._pdfPageWidth = PDFRenderer._pdfViewBox[3] - PDFRenderer._cropLeft;
-			PDFRenderer._pdfPageHeight = PDFRenderer._pdfViewBox[2] - PDFRenderer._cropBottom;
+			PDFRenderer._pdfPageWidth = Math.abs(PDFRenderer._pdfViewBox[3] - PDFRenderer._cropLeft);
+			PDFRenderer._pdfPageHeight = Math.abs(PDFRenderer._pdfViewBox[2] - PDFRenderer._cropBottom);
 		}
 	}
 
